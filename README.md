@@ -1,6 +1,6 @@
 # Hybrid Search RAG Demo
 
-> **Live demo: [Website URL](http://demo.com)**
+> **Live demo: [Website URL](https://hybrid-rag-demo-16np.onrender.com/)**
 > Free tier: the first request after 15 idle minutes takes ~1 minute while the instance wakes up.
 
 A small, standalone retrieval-augmented generation (RAG) app that answers questions over a set of sample documents using **hybrid search** — keyword search and dense vector search combined, deduplicated, and ranked — plus a **retrieval evaluation harness** that measures whether the hybrid approach actually beats either half.
