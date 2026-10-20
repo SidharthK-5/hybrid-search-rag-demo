@@ -1,0 +1,22 @@
+[
+  {"query": "How long do I have to wait for a copy of the personal information you hold about me?", "source": "Data Privacy Policy", "type": "paraphrase"},
+  {"query": "Who do I report a data breach to?", "source": "Data Privacy Policy", "type": "lexical"},
+  {"query": "What happens if I don't reconcile my corporate card on time?", "source": "Expense Reimbursement Policy", "type": "mixed"},
+  {"query": "Who has to approve a $3,000 business trip?", "source": "Expense Reimbursement Policy", "type": "paraphrase"},
+  {"query": "Can I get reimbursed for a speeding ticket?", "source": "Expense Reimbursement Policy", "type": "paraphrase"},
+  {"query": "How do I file a formal complaint about my supervisor?", "source": "Grievance Redressal Procedure", "type": "paraphrase"},
+  {"query": "What can I do if I disagree with the outcome of the HR investigation?", "source": "Grievance Redressal Procedure", "type": "mixed"},
+  {"query": "Can I plug my own USB drive into a work computer?", "source": "It Acceptable Use Policy", "type": "paraphrase"},
+  {"query": "How many days do I have to install security patches?", "source": "It Acceptable Use Policy", "type": "lexical"},
+  {"query": "How much notice do I need to give for medical leave?", "source": "Leave Of Absence Policy", "type": "mixed"},
+  {"query": "How long is parental leave if we adopt a child?", "source": "Leave Of Absence Policy", "type": "mixed"},
+  {"query": "Will I get my old job back after time off?", "source": "Leave Of Absence Policy", "type": "paraphrase"},
+  {"query": "When is a request for proposal required?", "source": "Procurement Guidelines", "type": "lexical"},
+  {"query": "Do I have to disclose a conflict of interest with a vendor?", "source": "Procurement Guidelines", "type": "lexical"},
+  {"query": "Can we make an urgent purchase outside the normal rules when there is a safety risk?", "source": "Procurement Guidelines", "type": "paraphrase"},
+  {"query": "How do I appeal a denied public records request?", "source": "Public Records Request Procedure", "type": "lexical"},
+  {"query": "Are there charges for photocopies of records?", "source": "Public Records Request Procedure", "type": "paraphrase"},
+  {"query": "Which records are exempt from disclosure?", "source": "Public Records Request Procedure", "type": "lexical"},
+  {"query": "How much money can I get to set up my home desk?", "source": "Remote Work Policy", "type": "paraphrase"},
+  {"query": "My laptop was stolen, how quickly do I need to report it?", "source": "Remote Work Policy", "type": "mixed"}
+]

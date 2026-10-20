@@ -1,0 +1,18 @@
+# Local Docker run that reads your .env.
+#
+#   docker compose up --build
+#
+# Why this exists: .env is excluded from the image on purpose (a secret baked into an
+# image layer travels with the image). Compose instead injects it as environment
+# variables when the container starts, and — unlike `docker run --env-file` — it
+# understands quoted values and trailing `# comments`.
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: "8000"
+    env_file:
+      - path: .env
+        required: false   # no .env -> keyless mode (TF-IDF + extractive answers)

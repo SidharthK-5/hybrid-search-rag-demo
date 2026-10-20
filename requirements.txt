@@ -1,0 +1,11 @@
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1
+pydantic>=2.8,<3
+scikit-learn>=1.5,<2
+numpy>=1.26,<3
+slowapi>=0.1.9,<1
+python-dotenv>=1.0,<2   # loads .env for local runs
+
+# Gemini SDK: dense embeddings for vector search, and Gemini answer generation.
+# Imported only when GOOGLE_API_KEY is set; with no keys the app never touches it.
+google-genai>=2.0,<3

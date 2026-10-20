@@ -1,0 +1,32 @@
+IT Acceptable Use Policy
+
+Purpose
+This policy defines acceptable use of organizational computing devices, networks, and
+accounts.
+
+General Principles
+Organizational systems are provided to support assigned job duties. Incidental
+personal use is permitted provided it does not interfere with work performance, consume
+significant resources, or violate any other organizational policy or law.
+
+Prohibited Activities
+Users must not install unlicensed software, attempt to bypass security controls,
+share login credentials with another person, or use organizational systems to access,
+store, or transmit unlawful content. Connecting personal storage devices to systems
+handling sensitive data is prohibited unless the device is organization-encrypted.
+
+Email and Communication
+Email accounts are organizational property and may be monitored for security and
+compliance purposes. Employees should exercise caution with unsolicited attachments
+and links and report suspected phishing attempts to IT Security immediately.
+
+Software and Device Management
+All laptops and mobile devices used to access organizational data must have endpoint
+protection software active and must be enrolled in the device management platform.
+Operating system and security patches must be applied within the timeframe specified
+by IT Security, typically 14 days of release.
+
+Enforcement
+Violations of this policy may result in suspension of system access and, depending on
+severity, disciplinary action up to and including termination of employment or
+contract.

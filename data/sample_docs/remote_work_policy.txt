@@ -1,0 +1,31 @@
+Remote Work Policy
+
+Purpose
+This policy defines the conditions under which employees may perform their duties
+from a location other than their assigned office.
+
+Eligibility
+Employees who have completed at least 90 days of continuous employment and whose
+role does not require regular physical presence (such as facilities, security, or
+front-desk staff) may request a remote work arrangement. Approval is granted by the
+employee's direct manager in consultation with Human Resources.
+
+Work Hours and Availability
+Remote employees are expected to be reachable during their team's agreed core hours,
+typically 10:00 AM to 4:00 PM local time, and to attend scheduled meetings with video
+enabled unless a documented accommodation applies.
+
+Equipment and Expenses
+The organization provides a laptop and standard peripherals for remote work. Employees
+may submit a one-time home-office stipend request of up to $300 for desk, chair, or
+monitor purchases, subject to manager approval and retention of receipts.
+
+Data Security
+Remote employees must connect to internal systems only through the approved VPN client
+and must not store confidential documents on personal, unencrypted devices. Any lost or
+stolen device used for work purposes must be reported to IT Security within 24 hours.
+
+Review and Revocation
+Remote work arrangements are reviewed annually. The organization reserves the right to
+revoke a remote arrangement if performance expectations are not met or if business needs
+change, with 30 days' written notice where practicable.

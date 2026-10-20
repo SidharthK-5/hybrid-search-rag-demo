@@ -1,0 +1,4 @@
+# Only needed if you set the matching API key to get generated answers from
+# Anthropic or OpenAI instead of Gemini. Safe to leave uninstalled otherwise.
+anthropic>=0.34
+openai>=1.40

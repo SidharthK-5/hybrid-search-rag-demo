@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hybrid Search RAG Demo</title>
+<style>
+  :root {
+    --ink: #1c2b36;
+    --muted: #5b6b78;
+    --paper: #faf8f4;
+    --line: #dcd6c9;
+    --accent: #2f5d50;
+    --accent-soft: #e8f0ec;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+  header {
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 20px;
+  }
+  h1 {
+    font-size: 26px;
+    margin: 0 0 6px 0;
+    font-weight: 600;
+  }
+  header p {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0;
+  }
+  form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  input[type="text"] {
+    flex: 1;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--ink);
+  }
+  input[type="text"]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  button:hover { background: #244a40; }
+  button:disabled { background: #a9b3ae; cursor: default; }
+
+  .examples {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 0 0 32px 0;
+  }
+  .examples button {
+    font-family: inherit;
+    font-size: 12.5px;
+    padding: 3px 9px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    margin-right: 6px;
+    margin-top: 6px;
+  }
+  .examples button:hover { background: #d9e8e0; }
+
+  .answer {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 16px 18px;
+    margin-bottom: 28px;
+    white-space: pre-wrap;
+    font-size: 15px;
+  }
+  .answer .tag {
+    display: inline-block;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.3px;
+    margin-bottom: 8px;
+  }
+
+  .results h2 {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    margin: 0 0 12px 0;
+  }
+  .result {
+    border-top: 1px solid var(--line);
+    padding: 14px 0;
+  }
+  .result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    margin-bottom: 4px;
+  }
+  .result-source { font-weight: 700; font-size: 13.5px; }
+  .result-scores {
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .result-text { font-size: 14.5px; color: #2b3b46; }
+
+  .options {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    margin: 4px 0 10px 0;
+  }
+  .options label { cursor: pointer; }
+  .backend-note {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11.5px;
+    color: var(--muted);
+    margin: -16px 0 24px 0;
+  }
+  .wrap.wide { max-width: 1120px; }
+  .compare-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+  @media (max-width: 860px) { .compare-grid { grid-template-columns: 1fr; } }
+  .compare-col h2 { margin-bottom: 4px; }
+  .compare-col .col-sub {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .compare-col .result-text {
+    font-size: 13px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    overflow: hidden;
+  }
+  .rank {
+    display: inline-block;
+    min-width: 1.4em;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .empty { color: var(--muted); font-size: 14px; }
+  .loading { color: var(--muted); font-size: 14px; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Hybrid Search RAG Demo</h1>
+    <p>Keyword + vector retrieval over a small set of synthetic sample policy documents. No client data — see README.</p>
+  </header>
+
+  <form id="search-form">
+    <input type="text" id="query" placeholder="e.g. how many weeks of parental leave am I entitled to?" autofocus>
+    <button type="submit" id="submit-btn">Search</button>
+  </form>
+  <div class="options">
+    <label><input type="checkbox" id="compare-toggle"> Compare keyword-only, vector-only and hybrid side by side</label>
+  </div>
+  <div class="examples">
+    Try:
+    <button type="button" data-q="How much notice do I need to give for medical leave?">medical leave notice</button>
+    <button type="button" data-q="What happens if I don't reconcile my corporate card on time?">corporate card</button>
+    <button type="button" data-q="When is a request for proposal required?">RFP threshold</button>
+  </div>
+
+  <div id="output"></div>
+</div>
+
+<script>
+  const form = document.getElementById('search-form');
+  const input = document.getElementById('query');
+  const output = document.getElementById('output');
+  const submitBtn = document.getElementById('submit-btn');
+
+  document.querySelectorAll('.examples button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      input.value = btn.dataset.q;
+      form.requestSubmit();
+    });
+  });
+
+  const compareToggle = document.getElementById('compare-toggle');
+  const wrap = document.querySelector('.wrap');
+
+  compareToggle.addEventListener('change', () => {
+    if (input.value.trim()) form.requestSubmit();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const query = input.value.trim();
+    if (!query) return;
+
+    const compare = compareToggle.checked;
+    submitBtn.disabled = true;
+    output.innerHTML = '<p class="loading">Searching…</p>';
+
+    try {
+      const res = await fetch(compare ? '/compare' : '/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(compare ? { query, top_k: 5 } : { query, top_k: 5, generate_answer: true }),
+      });
+      if (!res.ok) throw new Error(await errorMessage(res));
+      const data = await res.json();
+      wrap.classList.toggle('wide', compare);
+      compare ? renderCompare(data) : render(data);
+    } catch (err) {
+      output.innerHTML = `<p class="empty">Something went wrong: ${escapeHtml(err.message)}</p>`;
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  async function errorMessage(res) {
+    if (res.status === 429) return 'Rate limit reached — this public demo allows a few searches per minute. Please wait a moment.';
+    try {
+      const body = await res.json();
+      if (typeof body.detail === 'string') return body.detail;
+    } catch (_) { /* fall through */ }
+    return `Request failed (${res.status})`;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function backendNote(backend) {
+    const label = backend === 'tfidf' ? 'TF-IDF (no GOOGLE_API_KEY configured)'
+      : backend === 'tfidf (fallback)' ? 'TF-IDF (dense embedding service unavailable, using fallback)'
+      : `dense embeddings (${backend})`;
+    return `<p class="backend-note">Vector search: ${escapeHtml(label)}</p>`;
+  }
+
+  function renderCompare(data) {
+    const columns = [
+      ['keyword', 'Keyword only', 'SQLite FTS5 / BM25', 'keyword_score'],
+      ['vector', 'Vector only', 'cosine similarity', 'vector_score'],
+      ['hybrid', 'Hybrid', '0.4 keyword + 0.6 vector', 'combined_score'],
+    ];
+    let html = backendNote(data.vector_backend) + '<div class="compare-grid">';
+    for (const [key, title, sub, scoreField] of columns) {
+      html += `<div class="compare-col results"><h2>${title}</h2><div class="col-sub">${sub}</div>`;
+      if (!data[key].length) html += '<p class="empty">No matches.</p>';
+      data[key].forEach((r, i) => {
+        html += `
+          <div class="result">
+            <div class="result-head">
+              <span class="result-source"><span class="rank">${i + 1}.</span>${escapeHtml(r.source)}</span>
+              <span class="result-scores">${r[scoreField].toFixed(3)}</span>
+            </div>
+            <div class="result-text">${escapeHtml(r.text)}</div>
+          </div>`;
+      });
+      html += '</div>';
+    }
+    output.innerHTML = html + '</div>';
+  }
+
+  function render(data) {
+    let html = backendNote(data.vector_backend);
+
+    if (data.answer) {
+      const tag = data.answer_mode === 'generated' ? 'Generated answer' : 'Extractive mode (no LLM available)';
+      html += `<div class="answer"><div class="tag">${tag}</div>${escapeHtml(data.answer)}</div>`;
+    }
+
+    if (!data.results.length) {
+      html += '<p class="empty">No matching passages found.</p>';
+    } else {
+      html += '<div class="results"><h2>Matching passages</h2>';
+      for (const r of data.results) {
+        html += `
+          <div class="result">
+            <div class="result-head">
+              <span class="result-source">${escapeHtml(r.source)}</span>
+              <span class="result-scores">combined ${r.combined_score.toFixed(3)} · keyword ${r.keyword_score.toFixed(3)} · vector ${r.vector_score.toFixed(3)}</span>
+            </div>
+            <div class="result-text">${escapeHtml(r.text)}</div>
+          </div>`;
+      }
+      html += '</div>';
+    }
+
+    output.innerHTML = html;
+  }
+</script>
+</body>
+</html>

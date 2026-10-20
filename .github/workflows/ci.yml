@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      # No API keys exist in CI, so this also proves the zero-key path works.
+      - name: Run tests
+        run: pytest -q
+
+      # Smoke test, deliberately non-blocking: a drop in retrieval quality should
+      # be visible in the job summary, not break the build.
+      - name: Retrieval evaluation (smoke test)
+        continue-on-error: true
+        run: |
+          python -m eval.evaluate_retrieval --markdown eval-report.md
+          { echo "## Retrieval evaluation (Python ${{ matrix.python-version }})"; cat eval-report.md; } >> "$GITHUB_STEP_SUMMARY"
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t hybrid-rag-demo .
+      - name: Container serves /health on $PORT
+        run: |
+          docker run -d --name app -e PORT=10000 -p 10000:10000 hybrid-rag-demo
+          for i in $(seq 1 20); do
+            curl -fsS http://localhost:10000/health && exit 0
+            sleep 1
+          done
+          docker logs app
+          exit 1

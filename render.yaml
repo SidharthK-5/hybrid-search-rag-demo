@@ -1,0 +1,41 @@
+# Render Blueprint: one "New > Blueprint" action creates the whole service.
+# Schema reference: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: hybrid-rag-demo
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: commit   # redeploy on every push to the linked branch
+    envVars:
+      # Secrets: `sync: false` means the value is NEVER stored in this file —
+      # Render prompts for it in the dashboard when you create the Blueprint.
+      # Leave blank to run keyless (TF-IDF vector search + extractive answers).
+      - key: GOOGLE_API_KEY
+        sync: false
+      # Optional alternatives for answer generation. Not declared here so the
+      # Blueprint doesn't prompt for them; add in the dashboard if wanted
+      # (Service > Environment): ANTHROPIC_API_KEY, OPENAI_API_KEY.
+
+      # Model choices (non-secret). Edit here or in the dashboard — no code changes needed.
+      - key: GEMINI_EMBEDDING_MODEL
+        value: gemini-embedding-2
+      - key: GEMINI_EMBEDDING_DIM
+        value: "768"
+      - key: GEMINI_GENERATION_MODEL
+        value: gemini-flash-lite-latest
+
+      # Abuse protection for a public instance (see README: "Safety measures").
+      - key: RATE_LIMIT
+        value: 10/minute
+      - key: GLOBAL_RATE_LIMIT
+        value: 300/hour
+      # How many trusted proxies sit in front of the app and append to
+      # X-Forwarded-For (the per-IP limiter reads that many entries from the right).
+      # 2 assumes Render's edge adds two hops; Render doesn't document this, so
+      # the README has a 1-minute check to run after the first deploy.
+      - key: TRUSTED_PROXY_HOPS
+        value: "2"

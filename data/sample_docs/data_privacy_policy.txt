@@ -1,0 +1,34 @@
+Data Privacy Policy
+
+Purpose
+This policy sets out how personal data collected from employees, customers, and
+members of the public is handled, stored, and protected.
+
+Scope
+This policy applies to all personal data processed by the organization, whether held
+digitally or on paper, and to all staff, contractors, and third-party vendors who
+handle that data on the organization's behalf.
+
+Collection and Use
+Personal data is collected only for specified, legitimate purposes disclosed to the
+individual at the time of collection. Data must not be used for a new purpose
+incompatible with the original purpose without fresh notice or consent.
+
+Data Minimization and Retention
+Only the minimum data necessary for the stated purpose should be collected. Records
+containing personal data are retained according to the organization's retention
+schedule and securely destroyed once the applicable retention period expires.
+
+Access and Correction Requests
+Individuals may request a copy of the personal data held about them, or request
+correction of inaccurate data, by submitting a request to the Privacy Office. Requests
+are acknowledged within 5 business days and completed within 30 calendar days.
+
+Breach Notification
+Any suspected or confirmed data breach involving personal data must be reported to the
+Privacy Office immediately upon discovery. Depending on severity, affected individuals
+and relevant regulators may need to be notified within statutory timeframes.
+
+Third-Party Vendors
+Vendors who process personal data on the organization's behalf must be bound by a data
+processing agreement specifying security obligations and breach notification duties.
