@@ -1,6 +1,6 @@
 # Hybrid Search RAG Demo
 
-> **Live demo: https://YOUR-GITHUB-USERNAME.github.io/rag-demo/** — *placeholder: replace after you deploy (see [Deploy to Render](#deploy-to-render)).*
+> **Live demo: [Demo URL](https://sidharthk-5.github.io/hybrid-search-rag-demo/)**
 > The demo sleeps when idle (free tier). This link opens a short loading page that wakes it
 > and redirects automatically, usually within a minute — please share this one, not the raw `onrender.com` URL.
 
@@ -55,14 +55,14 @@ Evaluated 20 queries over 8 documents (document-level ground truth, chunk-level 
 | **Hybrid** (0.4 kw + 0.6 vec) | TF-IDF                     | 0.900 | 0.617 | 0.950 | 0.933 |
 | Keyword only (BM25)           | n/a                        | 0.900 | 0.583 | 0.950 | 0.933 |
 | Vector only                   | Dense (gemini-embedding-2) | 0.950 | 0.833 | 1.000 | 0.967 |
-| **Hybrid** (0.4 kw + 0.6 vec) | Dense (gemini-embedding-2) | 0.950 | 0.783 | 1.000 | 0.975 |
+| **Hybrid** (0.4 kw + 0.6 vec) | Dense (gemini-embedding-2) | 1.000 | 0.783 | 1.000 | 1.000 |
 
 #### Hybrid lift (by MRR)
 
 | Vector backend             | Best single method | MRR lift (abs) | MRR lift (rel) | W/T/L vs keyword | W/T/L vs vector |
 |----------------------------|--------------------|----------------|----------------|------------------|-----------------|
 | TF-IDF                     | keyword            | +0.000         | +0.0%          | 0/20/0           | 2/17/1          |
-| Dense (gemini-embedding-2) | vector             | +0.008         | +0.9%          | 2/18/0           | 1/18/1          |
+| Dense (gemini-embedding-2) | vector             | +0.033         | +3.4%          | 2/18/0           | 1/19/0          |
 
 *W/T/L = queries where hybrid's reciprocal rank is higher / equal / lower.*
 
@@ -80,15 +80,16 @@ Evaluated 20 queries over 8 documents (document-level ground truth, chunk-level 
 |------------|---|---------|--------|--------|
 | lexical    | 6 | 1.000   | 1.000  | 1.000  |
 | mixed      | 5 | 1.000   | 0.867  | 1.000  |
-| paraphrase | 9 | 0.852   | 1.000  | 0.944  |
+| paraphrase | 9 | 0.852   | 1.000  | 1.000  |
 
 **Reading the results honestly.**
 
 - **Dense embeddings help where they should.** Swapping TF-IDF for `gemini-embedding-2` lifts vector-only MRR from 0.902 to 0.967, and on *paraphrase* queries (little shared vocabulary) from 0.837 to 1.000. E.g. *"plug my own USB drive into a work computer"* vs the policy's *"personal storage devices"* moved from rank 6 to rank 2 in the hybrid ranking.
-- **Hybrid is best overall, by a hair.** With dense vectors, hybrid reaches MRR 0.975 vs 0.967 (vector-only) and 0.933 (keyword-only): it wins on 2 queries against keyword-only and loses on none, but against vector-only it's 1 win / 1 loss. That +0.008 is noise at this scale — I'm not claiming a lift over dense vector search.
-- **Hybrid isn't free.** On paraphrase queries hybrid (0.944) is *below* dense vector-only (1.000), because the keyword signal drags in lexically similar but wrong chunks. Hybrid's real value is robustness — it never does badly on either query type (keyword-only is weakest on paraphrases, vector-only on the "mixed" queries that mix exact terms with paraphrase) — and the 0.4/0.6 weights are hand-picked, not tuned.
+- **Hybrid scores best overall — but the margin is one query.** With dense vectors, hybrid reaches MRR 1.000 vs 0.967 (vector-only) and 0.933 (keyword-only). Against keyword-only it wins on 2 queries and loses on none; against vector-only it wins 1 and ties 19. A +0.033 lift that rests on a single query is not evidence that hybrid beats dense vector search, and I'm not claiming it does.
+- **How fragile that margin is:** these numbers moved once while I was writing this. Correcting a display label ("It" → "IT Acceptable Use Policy"), which is part of each chunk's embedding input, changed the ranking of one query and took hybrid from MRR 0.975 to 1.000. That is the noise floor of a 20-query set, and why the table should be read as a demonstration of the method, not a leaderboard.
+- **What hybrid does buy:** robustness. Keyword-only is weakest on paraphrases, vector-only on the "mixed" queries that combine exact terms with paraphrase, and hybrid is at or near the top on every query type. The 0.4/0.6 weights are hand-picked, not tuned.
 - On the keyless TF-IDF configuration, hybrid simply ties keyword-only.
-- **Scale caveat:** 20 queries I wrote myself over 8 short documents (24 chunks) is smoke-test scale; differences of a few points are within noise. The value here is the methodology and a reproducible harness (tested, runs in CI), not a leaderboard number. Results above were produced with a real `GOOGLE_API_KEY`; CI has no key, so it only runs the TF-IDF half.
+- **Scale caveat:** 20 queries I wrote myself over 8 short documents (24 chunks) is smoke-test scale. The value here is the methodology and a reproducible harness (tested, runs in CI), not a leaderboard number. Results above were produced with a real `GOOGLE_API_KEY`; CI has no key, so it only runs the TF-IDF half.
 
 ## Why hybrid search
 
@@ -235,6 +236,20 @@ Setup (once, after your first Render deploy):
 4. Test it: let the service sleep (15+ minutes idle), then open the Pages URL.
 
 If `CORS_ALLOW_ORIGINS` is missing or wrong the page can't tell when the server is up; it will still show the waiting message and, after 25 seconds, offer a direct link. **Trade-off:** the raw `onrender.com` URL still shows Render's screen when asleep, so only publish the Pages URL. (Alternatively, an external uptime pinger every ~10 minutes keeps the instance awake; one free service fits within Render's 750 monthly hours, but that uses most of your allowance, so I chose the loading page.)
+
+## Maintenance notes
+
+Things that aren't obvious from the code and are easy to forget:
+
+- **Rebuild the embedding cache** (`GOOGLE_API_KEY=... python -m scripts.build_embedding_cache`, then commit the new `.npy` and delete the old one) whenever you change a sample document, a document's display name, the embedding model, or the dimensionality. Forgetting is safe but slow: the app re-embeds the corpus at startup (one API call), which lengthens every Render cold start.
+- **Re-run the evaluation with a key** after any of those changes and refresh the README tables (`python -m eval.evaluate_retrieval --markdown eval/results.md`). CI has no key, so it only checks the TF-IDF half and won't notice a dense-embedding regression. Expect small shifts: one query moving rank changes the headline by ~0.03.
+- **`-latest` model aliases move.** `gemini-flash-lite-latest` can start pointing at a newer model without any change here. That's fine for a demo; pin exact IDs in `.env` / Render (`GEMINI_GENERATION_MODEL`, `GEMINI_EMBEDDING_MODEL`) if you quote eval numbers, since they belong to the model that produced them.
+- **Render secrets (`sync: false`) are only prompted for at first Blueprint creation.** A new one added to `render.yaml` later (like `CORS_ALLOW_ORIGINS`) must be added by hand under *Environment*. Plain `value:` entries do sync on later pushes.
+- **Verify the rate limiter on Render once** (Deploy step 7). `TRUSTED_PROXY_HOPS=2` assumes Render's edge adds two `X-Forwarded-For` hops, which Render doesn't document.
+- **Protect the API quota.** Put the Google key in its own project with a quota cap or budget alert. Generation depends on Google's shared free tier, which can be slow or return 503/504; the app degrades to extractive answers, and `python -m scripts.check_gemini` shows whether a failure is yours or Google's. A second provider key (Anthropic or OpenAI) keeps answers generating during a Gemini outage.
+- **Reproducible builds:** `requirements.txt` uses version ranges, so a Render rebuild can pull newer packages. Pin or lock versions if a rebuild ever breaks.
+- **Python versions:** developed and tested on 3.11 and 3.12 (CI matrix, Docker image is 3.12). Newer interpreters may lack prebuilt scikit-learn/scipy wheels; use the venv.
+- **Replace the placeholders** before linking the project anywhere: the live-demo URL at the top of this README and `appUrl` / `repoUrl` in `docs/config.js`.
 
 ## What this demo still simplifies
 

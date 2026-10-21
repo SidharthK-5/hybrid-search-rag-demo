@@ -75,7 +75,7 @@ def test_keyword_operators_are_treated_as_literal_words(index):
     ("when is a request for proposal required", "Procurement Guidelines"),
     ("how many weeks of medical leave", "Leave Of Absence Policy"),
     ("corporate card reconciliation", "Expense Reimbursement Policy"),
-    ("report a phishing email", "It Acceptable Use Policy"),
+    ("report a phishing email", "IT Acceptable Use Policy"),
 ])
 def test_hybrid_ranks_the_right_document_first(index, query, expected_source):
     hits, _ = hybrid_search(index, query, top_k=3)

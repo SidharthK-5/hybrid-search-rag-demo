@@ -11,6 +11,10 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
+# Words in file names that should display in upper case ("it_acceptable_use_policy" ->
+# "IT Acceptable Use Policy") — str.title() would render them as "It".
+ACRONYMS = {"it", "hr", "rfp", "id", "vpn"}
+
 CHUNK_SIZE = 700      # characters per chunk
 CHUNK_OVERLAP = 100   # characters of overlap between consecutive chunks
 
@@ -23,11 +27,16 @@ class Chunk:
 
 
 def load_documents(docs_dir: Path) -> list[tuple[str, str]]:
-    """Returns a list of (filename, full_text) for every .txt file in docs_dir."""
+    """Returns a list of (display_name, full_text) for every .txt file in docs_dir."""
     docs = []
     for path in sorted(docs_dir.glob("*.txt")):
-        docs.append((path.stem.replace("_", " ").title(), path.read_text(encoding="utf-8")))
+        docs.append((display_name(path.stem), path.read_text(encoding="utf-8")))
     return docs
+
+
+def display_name(stem: str) -> str:
+    """'remote_work_policy' -> 'Remote Work Policy'; known acronyms stay upper case."""
+    return " ".join(w.upper() if w.lower() in ACRONYMS else w.capitalize() for w in stem.split("_"))
 
 
 def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:

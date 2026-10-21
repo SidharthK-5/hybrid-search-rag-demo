@@ -7,6 +7,7 @@ from app.ingest import (
     build_chunks,
     build_keyword_index,
     chunk_text,
+    display_name,
     load_documents,
 )
 
@@ -90,3 +91,14 @@ def test_keyword_index_is_searchable(chunks):
     assert count == len(chunks)
     rows = conn.execute("SELECT source FROM chunks WHERE chunks MATCH 'RFP'").fetchall()
     assert {r[0] for r in rows} == {"Procurement Guidelines"}
+
+
+@pytest.mark.parametrize("stem, expected", [
+    ("remote_work_policy", "Remote Work Policy"),
+    ("it_acceptable_use_policy", "IT Acceptable Use Policy"),   # regression: str.title() gave "It"
+    ("hr_leave_policy", "HR Leave Policy"),
+    ("public_records_request_procedure", "Public Records Request Procedure"),
+    ("single", "Single"),
+])
+def test_display_name_keeps_acronyms_upper_case(stem, expected):
+    assert display_name(stem) == expected
