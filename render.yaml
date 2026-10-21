@@ -20,6 +20,13 @@ services:
       # Blueprint doesn't prompt for them; add in the dashboard if wanted
       # (Service > Environment): ANTHROPIC_API_KEY, OPENAI_API_KEY.
 
+      # Origin of the GitHub Pages loading page (docs/), e.g. https://<user>.github.io
+      # — scheme + host only, no path. Lets that page poll /health to learn when this
+      # sleeping free-tier instance has woken up. Prompted at Blueprint creation; blank
+      # is allowed (the loading page then can't detect readiness and just offers a link).
+      - key: CORS_ALLOW_ORIGINS
+        sync: false
+
       # Model choices (non-secret). Edit here or in the dashboard — no code changes needed.
       - key: GEMINI_EMBEDDING_MODEL
         value: gemini-embedding-2

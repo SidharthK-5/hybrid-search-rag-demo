@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hybrid Search RAG Demo — Starting up</title>
+<!--
+  Loading page for the live demo. The demo runs on a free hosting tier that sleeps when
+  idle, and the host shows its own generic "waking up" screen to anyone who arrives
+  while it sleeps. This page lives on an always-on static host instead: it wakes the
+  server by polling /health, keeps the visitor informed, and redirects the moment the
+  app is ready. Configure the target in config.js.
+-->
+<style>
+  :root {
+    --ink: #1c2b36;
+    --muted: #5b6b78;
+    --paper: #faf8f4;
+    --line: #dcd6c9;
+    --accent: #2f5d50;
+    --accent-soft: #e8f0ec;
+    --warn: #8a5a12;
+    --warn-soft: #f8efdc;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.55;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .sans { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  main { width: 100%; max-width: 560px; }
+  .eyebrow {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 32px 30px 28px;
+  }
+  .title-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  h1 { font-size: 26px; font-weight: 600; margin: 0; line-height: 1.25; }
+  .spinner {
+    flex: none;
+    width: 26px; height: 26px;
+    border: 3px solid var(--accent-soft);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  .spinner.done { animation: none; border-color: var(--accent); position: relative; }
+  .spinner.done::after {
+    content: ""; position: absolute; left: 6px; top: 2px; width: 6px; height: 12px;
+    border: solid var(--accent); border-width: 0 3px 3px 0; transform: rotate(45deg);
+  }
+  .spinner.stopped { animation: none; border-color: var(--line); border-top-color: var(--warn); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  p { margin: 0 0 14px; font-size: 16px; }
+  .bar {
+    position: relative; height: 4px; background: var(--accent-soft);
+    border-radius: 2px; overflow: hidden; margin: 20px 0 12px;
+  }
+  .bar::before {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 35%;
+    background: var(--accent); border-radius: 2px;
+    animation: slide 1.6s ease-in-out infinite;
+  }
+  .bar.still::before { animation: none; width: 0; }
+  @keyframes slide { 0% { left: -35%; } 100% { left: 100%; } }
+  @media (prefers-reduced-motion: reduce) {
+    .spinner { animation-duration: 3s; }
+    .bar::before { animation: none; width: 100%; opacity: 0.35; }
+  }
+
+  .status {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13.5px; color: var(--muted);
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .status .time { font-variant-numeric: tabular-nums; }
+
+  .note {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px; border-radius: 4px; padding: 12px 14px; margin: 18px 0 0;
+    background: var(--accent-soft); color: var(--ink);
+  }
+  .note.warn { background: var(--warn-soft); color: var(--warn); }
+  .while {
+    margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line);
+    font-size: 14.5px; color: #2b3b46;
+  }
+  .while strong { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12.5px;
+    text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .actions { margin-top: 16px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
+  a { color: var(--accent); }
+  button {
+    font-family: inherit; font-size: 14px; padding: 9px 16px; border: none; border-radius: 4px;
+    background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button:hover { background: #244a40; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Hybrid Search RAG Demo</p>
+  <div class="card">
+    <div class="title-row">
+      <div class="spinner" id="spinner" aria-hidden="true"></div>
+      <h1 id="heading">Waking up the demo…</h1>
+    </div>
+
+    <p id="message">
+      Thank you for stopping by! This demo runs on a free hosting tier that goes to sleep
+      when nobody is using it, so it needs a short moment to start up. We appreciate your
+      patience — it will open automatically as soon as it's ready.
+    </p>
+
+    <div class="bar" id="bar" aria-hidden="true"></div>
+    <div class="status" role="status" aria-live="polite">
+      <span id="status">Contacting the server…</span>
+      <span class="time" id="elapsed">0:00</span>
+    </div>
+
+    <div class="note" id="note" hidden></div>
+
+    <div class="while">
+      <strong>While you wait</strong>
+      A small retrieval-augmented search app: keyword search (BM25) and dense vector search
+      over synthetic policy documents, combined into one ranking. Once it opens, try the
+      “Compare” checkbox to see keyword-only, vector-only and hybrid results side by side.
+    </div>
+
+    <div class="actions">
+      <button type="button" id="retry" hidden>Try again</button>
+      <a id="direct" href="#" hidden>Open the demo directly</a>
+      <a id="repo" href="#" hidden target="_blank" rel="noopener">View the code</a>
+    </div>
+    <noscript><p class="note warn">This page needs JavaScript to wake the demo automatically.
+      You can still <a id="noscript-link" href="#">open it directly</a>; it may take about a minute to load.</p></noscript>
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script>
+(() => {
+  const cfg = window.DEMO_CONFIG || {};
+  const appUrl = String(cfg.appUrl || '').replace(/\/+$/, '');
+  const configured = /^https?:\/\/[^\s]+$/.test(appUrl) && !/YOUR-SERVICE/i.test(appUrl);
+
+  const POLL_MS = 3000;            // gap between health checks
+  const REQUEST_TIMEOUT_MS = 10000;
+  const OFFER_DIRECT_AFTER_MS = 25000;
+  const SLOW_AFTER_MS = 60000;
+  const GIVE_UP_MS = 240000;
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    spinner: $('spinner'), heading: $('heading'), message: $('message'), bar: $('bar'),
+    status: $('status'), elapsed: $('elapsed'), note: $('note'),
+    retry: $('retry'), direct: $('direct'), repo: $('repo'),
+  };
+
+  if (cfg.repoUrl) { el.repo.href = cfg.repoUrl; el.repo.hidden = false; }
+
+  if (!configured) {
+    el.spinner.className = 'spinner stopped';
+    el.bar.classList.add('still');
+    el.heading.textContent = 'Demo address not set yet';
+    el.message.textContent = 'This loading page doesn’t know where the demo lives. ' +
+      'Set appUrl in docs/config.js to your Render service URL (see the README), then reload.';
+    el.status.textContent = 'Not configured';
+    return;
+  }
+
+  el.direct.href = appUrl + '/';
+  const noscriptLink = $('noscript-link');
+  if (noscriptLink) noscriptLink.href = appUrl + '/';
+
+  let startedAt, attempt, stopped, pollTimer, tickTimer;
+
+  const fmt = (ms) => {
+    const s = Math.floor(ms / 1000);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  };
+
+  // Ready only if the response is real JSON from the app. The host's own wake-up
+  // screen is HTML (and carries no CORS headers), so it can't be mistaken for ready.
+  async function isReady() {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const res = await fetch(appUrl + '/health', { cache: 'no-store', mode: 'cors', signal: controller.signal });
+      if (!res.ok) return false;
+      const body = await res.json();
+      return Boolean(body && body.status === 'ok');
+    } catch (_) {
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function tick() {
+    const waited = Date.now() - startedAt;
+    el.elapsed.textContent = fmt(waited);
+    if (waited >= OFFER_DIRECT_AFTER_MS) el.direct.hidden = false;
+    if (waited >= SLOW_AFTER_MS && !stopped) {
+      el.note.hidden = false;
+      el.note.className = 'note';
+      el.note.textContent = 'Still starting up — thank you for waiting. Free servers can occasionally ' +
+        'take a little longer than usual.';
+    }
+  }
+
+  async function poll() {
+    if (stopped) return;
+    attempt += 1;
+    el.status.textContent = attempt === 1 ? 'Contacting the server…' : `Waiting for the server to respond (check ${attempt})…`;
+    if (await isReady()) return ready();
+    if (Date.now() - startedAt >= GIVE_UP_MS) return giveUp();
+    pollTimer = setTimeout(poll, POLL_MS);
+  }
+
+  function ready() {
+    stopped = true;
+    clearInterval(tickTimer);
+    el.spinner.className = 'spinner done';
+    el.bar.classList.add('still');
+    el.heading.textContent = 'All set — opening the demo';
+    el.message.textContent = 'Thank you for waiting!';
+    el.status.textContent = 'Server is ready';
+    el.note.hidden = true;
+    setTimeout(() => location.replace(appUrl + '/'), 600);
+  }
+
+  function giveUp() {
+    stopped = true;
+    clearInterval(tickTimer);
+    el.spinner.className = 'spinner stopped';
+    el.bar.classList.add('still');
+    el.heading.textContent = 'This is taking longer than expected';
+    el.message.textContent = 'We’re sorry for the wait, and thank you for your patience. ' +
+      'The server hasn’t responded yet. You can try again, or open the demo directly — it may ' +
+      'still be starting in the background.';
+    el.status.textContent = 'No response yet';
+    el.note.hidden = true;
+    el.retry.hidden = false;
+    el.direct.hidden = false;
+  }
+
+  function start() {
+    stopped = false;
+    attempt = 0;
+    startedAt = Date.now();
+    el.spinner.className = 'spinner';
+    el.bar.classList.remove('still');
+    el.heading.textContent = 'Waking up the demo…';
+    el.message.textContent = 'Thank you for stopping by! This demo runs on a free hosting tier that goes to sleep ' +
+      'when nobody is using it, so it needs a short moment to start up. We appreciate your patience — it will ' +
+      'open automatically as soon as it’s ready.';
+    el.note.hidden = true;
+    el.retry.hidden = true;
+    el.direct.hidden = true;
+    clearInterval(tickTimer);
+    clearTimeout(pollTimer);
+    tick();
+    tickTimer = setInterval(tick, 1000);
+    poll();
+  }
+
+  el.retry.addEventListener('click', start);
+  start();
+})();
+</script>
+</body>
+</html>

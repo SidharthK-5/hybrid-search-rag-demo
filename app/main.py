@@ -20,6 +20,7 @@ from app.ingest import build_chunks
 from app.safety import (
     BodySizeLimitMiddleware,
     checked_query,
+    configure_cors,
     limiter,
     rate_limit_handler,
     rate_limited,
@@ -60,6 +61,7 @@ app = FastAPI(title="Hybrid Search RAG Demo", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 app.add_middleware(BodySizeLimitMiddleware)
+configure_cors(app)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 

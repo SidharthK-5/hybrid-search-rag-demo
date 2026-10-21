@@ -14,7 +14,8 @@ need a shared store such as Redis.
 """
 import logging
 
-from fastapi import HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
@@ -42,6 +43,25 @@ def global_limit(_key: str | None = None) -> str:
 
 def trusted_proxy_hops() -> int:
     return max(0, env_int("TRUSTED_PROXY_HOPS", 0))
+
+
+def cors_origins() -> list[str]:
+    """Origins allowed to read this API cross-origin (CORS_ALLOW_ORIGINS, comma-separated)."""
+    return [o.strip().rstrip("/") for o in env_str("CORS_ALLOW_ORIGINS").split(",") if o.strip()]
+
+
+def configure_cors(app: FastAPI) -> None:
+    """Lets the static loading page (docs/, hosted on GitHub Pages) poll /health from
+    another origin to learn when a sleeping free-tier instance has woken up.
+
+    Deliberately narrow: only the listed origins, only GET, no credentials. CORS is
+    a browser rule, not an access control — the rate limits are what protect the API —
+    but there is no reason to let other sites read responses either. With the variable
+    unset (the default) no CORS headers are sent at all."""
+    origins = cors_origins()
+    if origins:
+        app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["GET"],
+                           allow_headers=[], allow_credentials=False)
 
 
 # --- client identification ---

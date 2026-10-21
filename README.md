@@ -1,7 +1,8 @@
 # Hybrid Search RAG Demo
 
-> **Live demo: [Website URL](https://hybrid-rag-demo-16np.onrender.com/)**
-> Free tier: the first request after 15 idle minutes takes ~1 minute while the instance wakes up.
+> **Live demo: https://YOUR-GITHUB-USERNAME.github.io/rag-demo/** — *placeholder: replace after you deploy (see [Deploy to Render](#deploy-to-render)).*
+> The demo sleeps when idle (free tier). This link opens a short loading page that wakes it
+> and redirects automatically, usually within a minute — please share this one, not the raw `onrender.com` URL.
 
 A small, standalone retrieval-augmented generation (RAG) app that answers questions over a set of sample documents using **hybrid search** — keyword search and dense vector search combined, deduplicated, and ranked — plus a **retrieval evaluation harness** that measures whether the hybrid approach actually beats either half.
 
@@ -111,6 +112,7 @@ tests/           pytest suite (unit + FastAPI integration), no network or keys n
 scripts/         build_embedding_cache.py (precompute embeddings), check_gemini.py (API diagnostic)
 data/sample_docs/  Eight synthetic sample policy documents (not real client data)
 static/index.html  Minimal single-page frontend
+docs/              Static loading page (GitHub Pages) that wakes the sleeping server and redirects
 Dockerfile, docker-compose.yml, render.yaml, .github/workflows/ci.yml
 ```
 
@@ -182,6 +184,7 @@ A public endpoint backed by someone's API quota needs guarding. All of these are
 | Query length cap | 500 characters, declared in the schema **and** re-checked in the handler (`checked_query`), which also strips control characters and rejects whitespace-only queries |
 | Body size cap | Requests over 16 KB are rejected with `413` *before* parsing, including chunked uploads with no `Content-Length` |
 | Graceful degradation | If the embedding API or LLM fails or exceeds its timeout (10 s embeddings, 15 s generation by default, no retries), the request falls back (TF-IDF / extractive) instead of returning a 500, and the failing provider is skipped for 60 s so one outage doesn't slow every visitor |
+| CORS | Off by default; `CORS_ALLOW_ORIGINS` allows only the loading page's origin, `GET` only, no credentials |
 | Secrets | API keys are environment variables only; `.env` is git-ignored and `render.yaml` declares them with `sync: false` |
 
 **Client IP and `X-Forwarded-For`.** Behind a proxy the socket address is the proxy's, so per-IP limiting must read `X-Forwarded-For`; but clients can forge that header and proxies *append* to it. The app therefore trusts only the entry added by infrastructure it controls — the `TRUSTED_PROXY_HOPS`-th entry from the right — and ignores the header entirely when that is `0` (the local default).
@@ -214,9 +217,24 @@ Everything is defined in `render.yaml` (Docker runtime, free plan, `/health` che
    ```
 
    Expect `200` ×10, then `429`. If you never see a `429`, the forged entries are being trusted: set `TRUSTED_PROXY_HOPS=1` in the Render dashboard. If different people get throttled together, the opposite is true — the log line `rate limit hit: key=… x-forwarded-for=…` shows what the app sees.
-8. **Put the URL at the top of this README** and commit.
+8. **Set up the loading page** (so visitors never see Render's generic cold-start screen —
+   see [Loading page](#loading-page-for-cold-starts) below).
+9. **Put the loading page's URL at the top of this README** and commit.
 
 **Free-tier behaviour:** the instance spins down after 15 minutes without traffic and takes about a minute to wake; 512 MB RAM (this app uses ~130 MB); 750 free instance hours/month; the filesystem is ephemeral. Fine for a portfolio demo, not for production.
+
+### Loading page for cold starts
+
+A free Render instance sleeps after 15 idle minutes, and anyone who arrives then sees Render's own "service waking up" screen for about a minute. That screen is served by Render's proxy while the app isn't running, so the app can't replace it. Instead, `docs/` holds a small static page hosted on **GitHub Pages** (always on, free) that you share as the demo link. It shows a polite "thanks for your patience" message with a live timer, polls the app's `/health`, and redirects the moment the app answers with real JSON (Render's wake-up HTML is never mistaken for "ready"). If the server hasn't responded after 4 minutes it apologises and offers *Try again* / *Open directly*.
+
+Setup (once, after your first Render deploy):
+
+1. Edit `docs/config.js`: set `appUrl` to your Render URL (and optionally `repoUrl`).
+2. In Render → your service → *Environment*, set **`CORS_ALLOW_ORIGINS`** to your Pages origin, e.g. `https://YOUR-GITHUB-USERNAME.github.io` (scheme + host only, no path). The loading page lives on a different origin, so the browser needs this to let it read `/health`. The app allows only that origin and only `GET`.
+3. Push, then in GitHub → *Settings → Pages* choose **Deploy from a branch**, branch `main`, folder **`/docs`**. The page appears at `https://YOUR-GITHUB-USERNAME.github.io/<repo>/`.
+4. Test it: let the service sleep (15+ minutes idle), then open the Pages URL.
+
+If `CORS_ALLOW_ORIGINS` is missing or wrong the page can't tell when the server is up; it will still show the waiting message and, after 25 seconds, offer a direct link. **Trade-off:** the raw `onrender.com` URL still shows Render's screen when asleep, so only publish the Pages URL. (Alternatively, an external uptime pinger every ~10 minutes keeps the instance awake; one free service fits within Render's 750 monthly hours, but that uses most of your allowance, so I chose the loading page.)
 
 ## What this demo still simplifies
 

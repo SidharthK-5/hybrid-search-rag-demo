@@ -16,3 +16,4 @@ LICENSE
 Dockerfile
 .dockerignore
 render.yaml
+docs
