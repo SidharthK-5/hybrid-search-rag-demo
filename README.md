@@ -1,8 +1,13 @@
 # Hybrid Search RAG Demo
 
+**In 15 seconds:**
+
+- **Hybrid retrieval, measured:** BM25 keyword search + dense Gemini embeddings, fused and compared against each alone on a labelled query set (precision@k, MRR) — with honest caveats about what 20 queries can and can't show.
+- **Degrades instead of failing:** no API key → TF-IDF + extractive answers; embedding or LLM outage → automatic fallback; the app runs at zero cost with zero setup.
+- **Built to be public:** per-IP and global rate limits, input caps, tests and CI, Docker, and a one-file Render deploy with a cold-start loading page.
+
 > **Live demo: [Demo URL](https://sidharthk-5.github.io/hybrid-search-rag-demo/)**
-> The demo sleeps when idle (free tier). This link opens a short loading page that wakes it
-> and redirects automatically, usually within a minute — please share this one, not the raw `onrender.com` URL.
+> The demo sleeps when idle (free tier). This link opens a short loading page that wakes it and redirects automatically, usually within a minute — please share this one, not the raw `onrender.com` URL.
 
 A small, standalone retrieval-augmented generation (RAG) app that answers questions over a set of sample documents using **hybrid search** — keyword search and dense vector search combined, deduplicated, and ranked — plus a **retrieval evaluation harness** that measures whether the hybrid approach actually beats either half.
 
@@ -57,6 +62,8 @@ Evaluated 20 queries over 8 documents (document-level ground truth, chunk-level 
 | Vector only                   | Dense (gemini-embedding-2) | 0.950 | 0.833 | 1.000 | 0.967 |
 | **Hybrid** (0.4 kw + 0.6 vec) | Dense (gemini-embedding-2) | 1.000 | 0.783 | 1.000 | 1.000 |
 
+*Keyword-only search doesn't use a vector backend, so its row is identical in both groups; it's repeated so each backend's three methods can be compared side by side.*
+
 #### Hybrid lift (by MRR)
 
 | Vector backend             | Best single method | MRR lift (abs) | MRR lift (rel) | W/T/L vs keyword | W/T/L vs vector |
@@ -89,7 +96,7 @@ Evaluated 20 queries over 8 documents (document-level ground truth, chunk-level 
 - **How fragile that margin is:** these numbers moved once while I was writing this. Correcting a display label ("It" → "IT Acceptable Use Policy"), which is part of each chunk's embedding input, changed the ranking of one query and took hybrid from MRR 0.975 to 1.000. That is the noise floor of a 20-query set, and why the table should be read as a demonstration of the method, not a leaderboard.
 - **What hybrid does buy:** robustness. Keyword-only is weakest on paraphrases, vector-only on the "mixed" queries that combine exact terms with paraphrase, and hybrid is at or near the top on every query type. The 0.4/0.6 weights are hand-picked, not tuned.
 - On the keyless TF-IDF configuration, hybrid simply ties keyword-only.
-- **Scale caveat:** 20 queries I wrote myself over 8 short documents (24 chunks) is smoke-test scale. The value here is the methodology and a reproducible harness (tested, runs in CI), not a leaderboard number. Results above were produced with a real `GOOGLE_API_KEY`; CI has no key, so it only runs the TF-IDF half.
+- **Scale caveat:** 20 queries I wrote myself over 8 short documents (24 chunks) is smoke-test scale. The value here is the methodology and a reproducible harness (tested, runs in CI), not a leaderboard number. Results above were produced with a real `GOOGLE_API_KEY`; CI has no key, so the *evaluation* there only covers the TF-IDF half; the dense-embedding code path (caching, normalization, fallback, the real SDK's request format) is unit-tested in CI with fakes instead.
 
 ## Why hybrid search
 

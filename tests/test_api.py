@@ -205,3 +205,57 @@ def test_missing_forwarded_header_falls_back_to_the_socket_address(client, monke
     monkeypatch.setenv("RATE_LIMIT", "1/minute")
     assert post(client, "/search", query="leave").status_code == 200
     assert post(client, "/search", query="leave").status_code == 429
+
+
+# --- dense vector path end to end (fake embedder; runs in CI without a key) ---
+
+class _FakeEmbedder:
+    model = "fake-embedding-model"
+    dim = 24   # >= number of sample chunks, so np.eye gives each chunk its own unit vector
+
+    def __init__(self, vector=None, error=None):
+        self.vector, self.error = vector, error
+
+    def embed_query(self, query):
+        if self.error:
+            from app.embeddings import EmbeddingError
+            raise EmbeddingError("quota exceeded")
+        return self.vector
+
+
+def _use_dense_index(monkeypatch, embedder):
+    import numpy as np
+
+    from app.main import state
+    from app.search import SearchIndex
+    from app.vector import DenseIndex, TfidfIndex
+
+    old = state["index"]
+    # Unit vector per chunk; the "query" embedding equals chunk 11's vector, so that chunk must win.
+    matrix = np.eye(len(old.chunks), embedder.dim, dtype=np.float32)
+    embedder.vector = embedder.vector if embedder.vector is not None else matrix[11]
+    dense = DenseIndex(old.chunks, matrix, embedder, TfidfIndex(old.chunks))
+    monkeypatch.setitem(state, "index", SearchIndex(old.chunks, old.keyword_conn, dense))
+    return old
+
+
+def test_search_through_a_dense_index_reports_its_backend(client, monkeypatch):
+    _use_dense_index(monkeypatch, _FakeEmbedder())
+    body = post(client, "/search", query="anything at all", top_k=5, generate_answer=False).json()
+    assert body["vector_backend"] == "fake-embedding-model"
+    assert client.get("/health").json()["vector_backend"] == "fake-embedding-model"
+
+
+def test_compare_vector_ranking_follows_the_dense_scores(client, monkeypatch):
+    _use_dense_index(monkeypatch, _FakeEmbedder())
+    body = post(client, "/compare", query="anything at all", top_k=3).json()
+    assert body["vector"][0]["chunk_id"] == 11
+
+
+def test_embedding_outage_degrades_to_tfidf_via_the_api(client, monkeypatch):
+    _use_dense_index(monkeypatch, _FakeEmbedder(error=True))
+    r = post(client, "/search", query="medical leave notice", generate_answer=False)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["vector_backend"] == "tfidf (fallback)"
+    assert body["results"][0]["source"] == "Leave Of Absence Policy"
